@@ -1244,11 +1244,13 @@ def thin_chevrons(font):
 
 
 # One size for the punctuation dots. Hack's period, colon and semicolon dots are 324 to 338
-# across, DejaVu's exclamation dot 203 (rounded to 229 here), Hack's question dot 292; Menlo
-# sets its at 263. Every round dot in . : ; ! ? is scaled to DOT_SIZE, a dot on the baseline
-# about its base so it keeps its overshoot, a raised dot about its centre; the comma, alone and
-# in the semicolon, is scaled by the same factor about the baseline so its head matches.
-DOT_SIZE = 324            # Hack's own size; Menlo's 263 reads too light in the app
+# across, DejaVu's exclamation dot 203 (rounded to 229 here), Hack's question dot 292; Menlo's
+# are squares, 352 across in the period and 263 in the exclamation mark. Every round dot in
+# . : ; ! ? is scaled to DOT_SIZE, a dot on the baseline about its base so it keeps its
+# overshoot, a raised dot about its centre; the comma, alone and in the semicolon, is scaled by
+# the same factor about the baseline so its head matches.
+DOT_SIZE = 350            # as wide as Menlo's square period, whose ink a circle cannot match: Hack's 324 reads faint
+                          # beside it at 11 to 13 px; at 375 the two dots of the colon close up, most of all in the Bold
 
 
 def dot_sizes(font):
