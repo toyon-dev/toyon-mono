@@ -25,11 +25,12 @@ so no weight can be interpolated between them):
      stem's stroke for the bars (OPERATOR_WIDTH, BAR_STROKE); the chevrons at Toyon's size,
      leaned, sharpened and thinned; the cross drawn fresh; the asterisk down on the operator
      line; the slashed zero; round tittles and one size of punctuation dot; the question mark
-     drawn as an arc with its terminal turned down; the crossbars of B E F H and the e lifted to
-     Menlo's height; the quotes at Menlo's weight, the 1 with Menlo's flag, the N at Menlo's
-     width; the @ a twentieth smaller; the t's top cut on a slant;
+     drawn as an arc with its terminal turned down, unless picked DejaVu's; the crossbars of
+     B E F H and the e lifted to Menlo's height; the quotes at Menlo's weight, the 1 with Menlo's
+     flag, the N at Menlo's width;
   4. add the ligatures -> <- <= >= as two-cell glyphs, plus the kern rules that draw || // and
-     != closer, and the contextual rule that gives the t its tail inside the word toyon;
+     != closer, and the contextual rule that gives the t its slanted top and tail inside the
+     word toyon;
   5. build TTFs with fontmake and write them and their woff2 into fonts/.
 
 Hinting is skipped: Hack's ttfautohint control files are tuned to Hack's outlines, and the
@@ -239,12 +240,14 @@ def low_asterisk(font):
 
 
 UNDERSCORE_BOTTOM = 0      # the underscore sits on the baseline, not under it
+UNDERSCORE_STROKE = 120    # Vera's own; at the stem's 172 it reads as a rule the letters stand on
+UNDERSCORE_WIDTH = 1000    # the operator width, in from Vera's 1044, so a_b has air at each side
 
 
 def underscore_on_baseline(font):
-    """The underscore placed with its bottom at UNDERSCORE_BOTTOM, at Vera's full width (1044 of
-    the 1233 cell), so a run of them reads as a rule. Its thickness is then settled with the
-    other bars by operator_widths()."""
+    """The underscore placed with its bottom at UNDERSCORE_BOTTOM. Its thickness and width are
+    then set to UNDERSCORE_STROKE and UNDERSCORE_WIDTH by operator_widths(), with the other
+    bars."""
     glyph = font["underscore"]
     x0, y0, x1, y1 = bounds(glyph, font.layers.defaultLayer)
     transform_in_place(glyph, Transform().translate(0, UNDERSCORE_BOTTOM - y0))
@@ -263,14 +266,15 @@ ENCLOSURES = ["parenleft", "parenright", "bracketleft", "bracketright", "bracele
 
 
 # The dashes speak with each other: hyphen, equals, plus and the en dash share one ink width,
-# OPERATOR_WIDTH, and the underscore and the dashes take the hyphen's stroke thickness (the
-# underscore stays Vera's full 1044 wide, so a run of them reads as a rule). Vera's are a mixed
-# set (hyphen 821, equals and plus 1057, en dash 615) and the thickness runs from 120 for the
-# underscore to 164 for the hyphen. Widths are changed by moving each glyph's ends in or out,
+# OPERATOR_WIDTH, and the dashes take the hyphen's stroke thickness; the underscore keeps Vera's
+# thinner stroke, UNDERSCORE_STROKE, and is brought in from Vera's 1044 to UNDERSCORE_WIDTH, so
+# it neither weighs on the line nor runs into its neighbours. Vera's are a mixed set (hyphen
+# 821, equals and plus 1057, en dash 615) and the thickness runs from 120 for the underscore to
+# 164 for the hyphen. Widths are changed by moving each glyph's ends in or out,
 # never by scaling, so stroke thickness and end shapes stay; a point within a stem's reach of
 # the centre (the upright of the plus) does not move.
 OPERATOR_WIDTH = 1000     # between Vera's hyphen and its equals; Menlo's 1057 reads as the right size in the app
-OPERATORS = ["hyphen", "equal", "plus", "endash"]      # the underscore keeps Vera's full width
+OPERATORS = ["hyphen", "equal", "plus", "endash"]      # the underscore has its own width, below
 BARS = ["underscore", "endash", "emdash"]
 # And one centre line for all of them. Vera spreads the operators over three: the dashes at
 # 563, the hyphen and tilde at 601, the maths signs at 641. Toyon centres every one on a single
@@ -286,22 +290,26 @@ BAR_STROKE = 172          # the dashes at the stem's weight; Vera's hyphen was 1
 
 def operator_widths(font):
     layer = font.layers.defaultLayer
-    thickness = BAR_STROKE * weight_ratio(font, "operator")
+    ratio = weight_ratio(font, "operator")
     for name in ["hyphen"] + BARS:
         glyph = font[name]
         x0, y0, x1, y1 = bounds(glyph, layer)
         cy = (y0 + y1) / 2
         if name == "underscore":
+            thickness = UNDERSCORE_STROKE * ratio
             t = Transform().translate(0, y0).scale(1, thickness / (y1 - y0)).translate(0, -y0)
-        else:
-            t = Transform().translate(0, cy).scale(1, thickness / (y1 - y0)).translate(0, -cy)
+            transform_in_place(glyph, t)
+            note(name, f"the stroke kept at Vera's {UNDERSCORE_STROKE}, thinner than the dashes", "toyon")
+            continue
+        thickness = BAR_STROKE * ratio
+        t = Transform().translate(0, cy).scale(1, thickness / (y1 - y0)).translate(0, -cy)
         transform_in_place(glyph, t)
         note(name, "the stroke set to the stem's weight", "toyon")
-    for name in OPERATORS:
+    for name, width in [(n, OPERATOR_WIDTH) for n in OPERATORS] + [("underscore", UNDERSCORE_WIDTH)]:
         glyph = font[name]
         x0, y0, x1, y1 = bounds(glyph, layer)
         cx = (x0 + x1) / 2
-        d = (OPERATOR_WIDTH - (x1 - x0)) / 2
+        d = (width - (x1 - x0)) / 2
         for contour in glyph.contours:
             for pt in contour.points:
                 if pt.x > cx + 150:
@@ -309,7 +317,7 @@ def operator_widths(font):
                 elif pt.x < cx - 150:
                     pt.x -= d
         if abs(d) > 1:
-            note(name, f"ends moved to the operator width, {OPERATOR_WIDTH}", "toyon")
+            note(name, f"ends moved to the operator width, {width}", "toyon")
     for name in CENTRED:
         glyph = font[name]
         x0, y0, x1, y1 = bounds(glyph, layer)
@@ -366,28 +374,112 @@ def box(name, w, h, cy):
     return apply
 
 
+ZERO_SLASH_GAP = 70       # the air between each corner of the slash and the counter's edge, along the slant, the same in
+                          # both weights: the slash is a bar floating in the counter, like the equals' bars and the
+                          # cross's, so the ring is untouched and the digit cannot read as the letter O with a stroke.
+                          # Below zero the end runs into the ring (buried, as Menlo's) and then out past it, which
+                          # reads as that letter and muddies small sizes
+ZERO_SLASH_CUT = "square"  # the ends: "square" across the slash like the chevrons' arms, "level", "upright" or "round"
+ZERO_SLASH_STROKE = 0.25  # the slash's thickness, measured level, as a share of the counter's width: 140 in the Regular,
+                          # four fifths of its stem, and 98 in the Bold, whose counter is narrower. Hack does the same
+                          # with its dot, 201 wide in the Regular and 105 in the Bold; thickened with the weight
+                          # instead, the Bold's bar has no room for length and shrinks to a lozenge
+ZERO_SLASH_LEAN = 7.5     # the slant, in degrees shallower than the counter's own diagonal, so each weight's slash
+                          # suits its counter: 58 from horizontal in the Regular (diagonal 65.5), about Menlo's angle,
+                          # and 62 in the Bold's narrower counter (69.5). At 0, on the diagonal, the slash runs so
+                          # close to the ring's sides at 11 to 14 px that the counter barely splits; at 15 it reads
+                          # crossed out
+
+
 def slashed_zero(font):
     """A slashed zero where the family's is dotted. Hack's zero minus its dot, plus a
-    diagonal through the counter at four fifths of the stem's thickness, running into the ring
-    at both ends so the join is clean."""
+    diagonal through the counter, ZERO_SLASH_STROKE of its width thick, on the slant of the
+    counter's diagonal less ZERO_SLASH_LEAN, each end ZERO_SLASH_GAP short of
+    the counter's edge, measured along the slant on the outline itself, and cut as
+    ZERO_SLASH_CUT says."""
+    from fontTools.pens.basePen import BasePen
     glyph = font["zero"]
-    layer = font.layers.defaultLayer
     def area(c):
         xs = [p.x for p in c.points]; ys = [p.y for p in c.points]
         return (max(xs) - min(xs)) * (max(ys) - min(ys))
     contours = sorted(glyph.contours, key=area)
-    dot, counter = contours[0], contours[1]
+    dot, counter, ring = contours
     glyph.contours.remove(dot)
     xs = [p.x for p in counter.points]; ys = [p.y for p in counter.points]
     x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
-    gap = -120                                 # past the counter, into the ring: merged clean by overlap removal
-    ax, ay, bx, by = x0 + gap, y0 + gap, x1 - gap, y1 - gap
-    w = 140 * weight_ratio(font) / 2                # four fifths of the Regular stem, scaled with the weight
-    # wound the same way as the outer ring (clockwise in Hack's sources), so overlap removal
-    # unions it with the ring instead of cutting a slash-shaped hole through it
+    cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+    dl = ((x1 - x0) ** 2 + (y1 - y0) ** 2) ** 0.5
+    import math
+    slant = math.atan2(y1 - y0, x1 - x0) - math.radians(ZERO_SLASH_LEAN)
+    dx, dy = math.cos(slant), math.sin(slant)
+
+    class Flatten(BasePen):                        # the outline as a polyline, to cut it with the slant
+        def __init__(self):
+            super().__init__(None); self.pts = []; self.cur = None
+        def _moveTo(self, p): self.cur = p; self.pts.append(p)
+        def _lineTo(self, p): self.cur = p; self.pts.append(p)
+        def _curveToOne(self, p1, p2, p3):
+            (ax, ay), (bx, by), (qx, qy), (rx, ry) = self.cur, p1, p2, p3
+            for i in range(1, 17):
+                t = i / 16; u = 1 - t
+                self.pts.append((u*u*u*ax + 3*u*u*t*bx + 3*u*t*t*qx + t*t*t*rx, u*u*u*ay + 3*u*u*t*by + 3*u*t*t*qy + t*t*t*ry))
+            self.cur = p3
+        def _closePath(self): self.pts.append(self.pts[0])
+
+    def reach(contour, sign, ox=0, oy=0):
+        """Distance to the contour along the slant, in the direction sign, from the centre moved
+        by (ox, oy)."""
+        pen = Flatten(); contour.draw(pen); pts = pen.pts
+        ddx, ddy = sign * dx, sign * dy
+        hits = []
+        for (px, py), (qx, qy) in zip(pts, pts[1:]):
+            ex, ey = qx - px, qy - py
+            det = ddx * ey - ddy * ex            # the ray (cx,cy)+t(ddx,ddy) against the segment p+s(e)
+            if abs(det) < 1e-9:
+                continue
+            wx, wy = px - cx - ox, py - cy - oy
+            t = (wx * ey - wy * ex) / det
+            s = (ddy * wx - ddx * wy) / det
+            if t > 0 and 0 <= s <= 1:
+                hits.append(t)
+        return min(hits)
+
+    w = ZERO_SLASH_STROKE * (x1 - x0) / 2
+    # the gap is kept from whichever of the bar's two edges meets the counter first, not from
+    # its centreline: the Bold's bar is wide in a narrow counter, and its corners reach the wall
+    # well before its middle does
+    ex, ey = -dy * w * dy, dx * w * dy             # half the stroke across the slant
+    ends = []
+    for sign in (-1, 1):
+        end = min(reach(counter, sign, ex, ey), reach(counter, sign, -ex, -ey)) - ZERO_SLASH_GAP
+        ends.append((cx + sign * dx * end, cy + sign * dy * end))
+    (ax, ay), (bx, by) = ends
+    # the ends cut square, perpendicular to the slash like the chevrons' arms and the cross's
+    # bars, not level: (nx, ny) is half the stroke across the slant. The stroke is 2w measured
+    # level, as before, so across the slant it is 2w * dy.
+    h = w * dy
+    nx, ny = -dy * h, dx * h
+    if ZERO_SLASH_CUT == "level":
+        nx, ny = -w, 0
+    elif ZERO_SLASH_CUT == "upright":
+        nx, ny = 0, h / dx
+    # wound the same way as the outer ring (clockwise in Hack's sources), so it fills inside the
+    # counter, and where a negative gap runs it into the ring overlap removal unions the two
+    # instead of cutting a slash-shaped hole
     pen = glyph.getPen()
-    pen.moveTo((ax - w, ay)); pen.lineTo((bx - w, by)); pen.lineTo((bx + w, by)); pen.lineTo((ax + w, ay)); pen.closePath()
-    note("zero", "the dot removed and a slash drawn through, as Menlo's", "m", "draw")
+    pen.moveTo((ax + nx, ay + ny)); pen.lineTo((bx + nx, by + ny))
+    if ZERO_SLASH_CUT == "round":
+        k, tx, ty = 0.5523, dx * h, dy * h         # a half circle over each end, two quarter arcs
+        def cap(cx_, cy_, ux, uy, vx, vy):
+            pen.curveTo((cx_ + ux + k * vx, cy_ + uy + k * vy), (cx_ + vx + k * ux, cy_ + vy + k * uy), (cx_ + vx, cy_ + vy))
+            pen.curveTo((cx_ + vx - k * ux, cy_ + vy - k * uy), (cx_ - ux + k * vx, cy_ - uy + k * vy), (cx_ - ux, cy_ - uy))
+        cap(bx, by, nx, ny, tx, ty)
+        pen.lineTo((ax - nx, ay - ny))
+        cap(ax, ay, -nx, -ny, -tx, -ty)
+    else:
+        pen.lineTo((bx - nx, by - ny)); pen.lineTo((ax - nx, ay - ny))
+    pen.closePath()
+    note("zero", "the dot removed and a slash drawn in the counter, a bar with square ends", "toyon", "draw")
 
 
 # The t's tail: Toyon's signature, a diagonal rising out of the stem's foot, which t.toyon
@@ -763,9 +855,9 @@ def kern_rule(first, second, by):
 SIGNATURE_WORD = "toyon"
 
 
-# The top of the t's stem, every t: not Vera's flat cut but a slant, the left corner lower, rising to the right corner at the full height. The
-# angle is the knob, so the Bold's wider stem drops its left corner further and the slant
-# stays the same.
+# The top of the signature t's stem: not Vera's flat cut but a slant, the left corner lower,
+# rising to the right corner at the full height. The angle is the knob, so the Bold's wider stem
+# drops its left corner further and the slant stays the same. The plain t keeps Vera's flat top.
 T_TOP_ANGLE = 28
 
 
@@ -778,22 +870,22 @@ def cut_t_top(font, name="t"):
     if len(corners) != 2:
         return
     corners[0].y = round(top - (corners[1].x - corners[0].x) * math.tan(math.radians(T_TOP_ANGLE)))
-    note("t", "the top of the stem cut on a slant, the left corner lower", "toyon", "draw")
+    note(name, "the top of the stem cut on a slant, the left corner lower", "toyon", "draw")
 
 
 def signature_t(font):
     import copy
-    cut_t_top(font)
     glyph = font.newGlyph("t.toyon")
     glyph.width = font["t"].width
     for c in font["t"].contours:
         glyph.contours.append(copy.deepcopy(c))
+    cut_t_top(font, "t.toyon")
     hooked_t(font, "t.toyon")
     order = list(font.lib.get("public.glyphOrder", []))
     if "t.toyon" not in order:
         order.append("t.toyon")
     font.lib["public.glyphOrder"] = order
-    note("t", f"Vera's; the rising tail only in the word {SIGNATURE_WORD}, by a contextual rule", "toyon", "draw")
+    note("t", f"Vera's; the slanted top and rising tail only in the word {SIGNATURE_WORD}, by a contextual rule", "toyon", "draw")
     rest = " ".join(SIGNATURE_WORD[1:])
     return f"sub t' {rest} by t.toyon;"
 
@@ -1088,22 +1180,6 @@ def lift_e_bar(font):
     note("e", f"crossbar lifted {E_BAR_LIFT} to Menlo's height, opening the aperture", "m", "draw")
 
 
-# The at sign scaled down by AT_SCALE about its centre and lifted so it hangs AT_BOTTOM below
-# the baseline: Vera's is 1151 wide and reaches 319 below, and at full size it reads as the
-# widest thing on the line. A twentieth smaller its stroke is a twentieth lighter too.
-AT_SCALE, AT_BOTTOM = 0.95, -140
-
-
-def round_at(font):
-    glyph = font["at"]
-    x0, y0, x1, y1 = bounds(glyph, font.layers.defaultLayer)
-    cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
-    transform_in_place(glyph, Transform().translate(cx, cy).scale(AT_SCALE).translate(-cx, -cy))
-    x0, y0, x1, y1 = bounds(glyph, font.layers.defaultLayer)
-    transform_in_place(glyph, Transform().translate(0, AT_BOTTOM - y0))
-    note("at", f"scaled to {AT_SCALE:g} and lifted to hang {-AT_BOTTOM} below the baseline", "toyon")
-
-
 # The figure one's flag at Menlo's length: Menlo's 1 is Vera's with the flag's tip moved 38 left
 # and about 115 down, so the flag reaches further and lower; Hack's is a steeper redraw. Applied
 # to DejaVu's outline, which the picks copy in.
@@ -1237,6 +1313,28 @@ def dot_sizes(font):
         note(name, f"the comma scaled with the dots, by {factor:.2f} about the baseline", "toyon", "draw")
 
 
+def question_dot(font):
+    """The question mark punctuated like the exclamation mark: its dot is the exclamation's, and
+    its stem ends where the exclamation's does, so the gap over the dot is the same in both.
+    Vera's question stem runs down to 401 against the exclamation's 481, and once the dot is
+    sized up about its base the two gaps are 64 and 144. Toyon's own question mark is drawn
+    this way already; this is what makes a DejaVu copy match. Runs after dot_sizes."""
+    import copy
+    glyph, exclam = font["question"], font["exclam"]
+    dot = min(exclam.contours, key=lambda c: max(p.y for p in c.points))
+    body = max(glyph.contours, key=lambda c: len(c.points))
+    for c in list(glyph.contours):
+        if c is not body:
+            glyph.contours.remove(c)
+    glyph.contours.append(copy.deepcopy(dot))
+    stem_bottom = min(p.y for c in exclam.contours if c is not dot for p in c.points)
+    old_bottom = min(p.y for p in body.points)
+    for p in body.points:
+        if abs(p.y - old_bottom) < 1:
+            p.y = stem_bottom
+    note("question", "the exclamation mark's dot, and its stem ended where the exclamation's ends", "toyon", "draw")
+
+
 # The multiplication sign drawn fresh: two bars of the chevrons' stroke crossing at 45 degrees,
 # centred on the operator line, in a box CROSS_BOX square. Scaling Hack's cross down to that
 # box thins its stroke to 150, so it is drawn rather than scaled. fontmake's overlap removal
@@ -1296,9 +1394,10 @@ CHEVRON_WIDTH = 911       # narrower than the family's 1057
 CHEVRON_CUT = "square"    # the arms' ends cut perpendicular to the arm, like the cross's; "vertical" is Vera's upright cut
 CHEVRON_TIP = 172         # the apex's flat, the hyphen's thickness, so <- and -> meet stroke to stroke
 
-ALWAYS = [low_asterisk, slashed_zero, round_tittles, lift_cap_bars, menlo_quotes, question_terminal, lift_e_bar, round_at, menlo_one, thin_chevrons, dot_sizes, draw_cross, widen_n]
+ALWAYS = [low_asterisk, slashed_zero, round_tittles, lift_cap_bars, menlo_quotes, question_terminal, lift_e_bar, menlo_one, thin_chevrons, dot_sizes, question_dot, draw_cross, widen_n]
+PICK_OFF = {question_terminal: "?"}     # a rule a "dv" pick on its character switches off: the glyph is then DejaVu's, copied in
 MOVES = {"toyon": {"_": underscore_on_baseline, "<": box("less", CHEVRON_WIDTH, CHEVRON_HEIGHT, OPERATOR_LINE), ">": box("greater", CHEVRON_WIDTH, CHEVRON_HEIGHT, OPERATOR_LINE),
-                   "\u00d7": lambda font: None, "?": lambda font: None, "t": hooked_t}}   # the cross and the question mark are drawn by their rules whatever is picked
+                   "\u00d7": lambda font: None, "?": lambda font: None, "t": hooked_t}}   # the cross is drawn by its rule whatever is picked, the question mark by its unless picked "dv"
 NAMES = {"dv": "DejaVu", "toyon": "Toyon", "hk": "Hack", "m": "Menlo"}
 
 
@@ -1341,6 +1440,8 @@ def forge(style):
     for ch, face in hand:
         print(f"      by hand, still Hack's: {ch} picked from {NAMES[face]}")
     for change in ALWAYS:
+        if chosen.get(PICK_OFF.get(change)) == "dv":
+            continue
         change(font)
     span_enclosures(font)
     operator_widths(font)

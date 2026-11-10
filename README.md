@@ -21,23 +21,26 @@ order:
    - every operator on one line, 660 of 2048, and the enclosures `( ) [ ] { } | / \` on one span,
      -230 to 1550, centred on that same line, so a chevron's tip, a hyphen and a brace's point
      meet;
-   - the hyphen, equals, plus and en dash at one width, 1000, and the hyphen, underscore and dashes
-     at the stem's stroke; the plus square; the equals spread to Menlo's spacing; the underscore
-     on the baseline at Vera's full width;
+   - the hyphen, equals, plus and en dash at one width, 1000, and the hyphen and dashes at the
+     stem's stroke; the plus square; the equals spread to Menlo's spacing; the underscore on the
+     baseline at the operator width and Vera's thinner stroke;
    - the chevrons narrower and taller than the family's, 911 by 1192, leaned toward what they
      enclose, sharpened to a flat the hyphen's thickness, cut square at the ends and thinned to
      the operator stroke; the cross drawn fresh as two bars of that stroke; the asterisk at 1060,
      near Menlo's size;
-   - a slashed zero; round tittles on i and j; one size for the punctuation dots, with the commas
-     scaled to match; the question mark drawn as an arc with its terminal turned down, carrying
-     the exclamation mark's dot;
+   - a zero slashed by a square-ended bar floating in its counter; round tittles on i and j;
+     one size for the punctuation dots, with the commas scaled to match; the question mark,
+     whoever drew it, punctuated like the exclamation mark,
+     with its dot and its stem ending where the exclamation's does, and when picked Toyon's drawn
+     as an arc with its terminal turned down (`picks.json` picks DejaVu's);
    - the crossbars of `B E F H` and the `e` lifted to Menlo's height, which opens the `e`;
    - the quote marks, straight and curly, at Menlo's weight; the `1` with Menlo's longer flag;
      the `N` at Menlo's width;
-   - the `@` a twentieth smaller and lifted; every `t` with its top cut on a slant, and inside
-     the word toyon a `t` whose tail rises, by a contextual rule;
+   - inside the word toyon, a `t` with its top cut on a slant and its tail rising, by a
+     contextual rule; every other `t` is Vera's;
 4. adds the ligatures `<= >=` (a chevron with a bar parallel to its lower arm) and `-> <-`, and
-   the kern rules that draw `|| // !=` closer without changing any advance;
+   the kern rules that draw `|| //` closer without changing any advance (`!=` has one too,
+   which `picks.json` switches off);
 5. builds with fontmake and writes `fonts/`.
 
 Each number has a comment in `tools/forge.py` saying what it does and where it came from. The
