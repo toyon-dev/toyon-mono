@@ -28,7 +28,7 @@ order:
      enclose, sharpened to a flat the hyphen's thickness, cut square at the ends and thinned to
      the operator stroke; the cross drawn fresh as two bars of that stroke; the asterisk at 1060,
      near Menlo's size;
-   - a zero slashed by a square-ended bar floating in its counter; round tittles on i and j;
+   - a zero slashed as Menlo's is, the slash ending inside the ring; round tittles on i and j;
      one size for the punctuation dots, with the commas scaled to match; the question mark,
      whoever drew it, punctuated like the exclamation mark,
      with its dot and its stem ending where the exclamation's does, and when picked Toyon's drawn

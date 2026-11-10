@@ -374,16 +374,8 @@ def box(name, w, h, cy):
     return apply
 
 
-ZERO_SLASH_GAP = 70       # the air between each corner of the slash and the counter's edge, along the slant, the same in
-                          # both weights: the slash is a bar floating in the counter, like the equals' bars and the
-                          # cross's, so the ring is untouched and the digit cannot read as the letter O with a stroke.
-                          # Below zero the end runs into the ring (buried, as Menlo's) and then out past it, which
-                          # reads as that letter and muddies small sizes
-ZERO_SLASH_CUT = "square"  # the ends: "square" across the slash like the chevrons' arms, "level", "upright" or "round"
-ZERO_SLASH_STROKE = 0.25  # the slash's thickness, measured level, as a share of the counter's width: 140 in the Regular,
-                          # four fifths of its stem, and 98 in the Bold, whose counter is narrower. Hack does the same
-                          # with its dot, 201 wide in the Regular and 105 in the Bold; thickened with the weight
-                          # instead, the Bold's bar has no room for length and shrinks to a lozenge
+ZERO_SLASH_STROKE = 140   # the slash's thickness, measured level: four fifths of the Regular stem, and thickened for
+                          # the Bold by the operator ratio, as the other bars are
 ZERO_SLASH_LEAN = 7.5     # the slant, in degrees shallower than the counter's own diagonal, so each weight's slash
                           # suits its counter: 58 from horizontal in the Regular (diagonal 65.5), about Menlo's angle,
                           # and 62 in the Bold's narrower counter (69.5). At 0, on the diagonal, the slash runs so
@@ -392,11 +384,14 @@ ZERO_SLASH_LEAN = 7.5     # the slant, in degrees shallower than the counter's o
 
 
 def slashed_zero(font):
-    """A slashed zero where the family's is dotted. Hack's zero minus its dot, plus a
-    diagonal through the counter, ZERO_SLASH_STROKE of its width thick, on the slant of the
-    counter's diagonal less ZERO_SLASH_LEAN, each end ZERO_SLASH_GAP short of
-    the counter's edge, measured along the slant on the outline itself, and cut as
-    ZERO_SLASH_CUT says."""
+    """A slashed zero where the family's is dotted, built as Menlo's is. Hack's zero minus its
+    dot, plus a diagonal through the counter, ZERO_SLASH_STROKE thick, on the slant of the
+    counter's diagonal less ZERO_SLASH_LEAN, each end in the middle of the ring, measured along
+    the slant on the outline itself, so overlap removal buries it and nothing shows outside.
+    Tried and dropped: ends past the ring, which read as the letter O with a stroke and muddy
+    small sizes; and a bar floating in the counter, which suits the Regular but in the Bold's
+    narrow counter has to shrink to a speck."""
+    import math
     from fontTools.pens.basePen import BasePen
     glyph = font["zero"]
     def area(c):
@@ -408,8 +403,6 @@ def slashed_zero(font):
     xs = [p.x for p in counter.points]; ys = [p.y for p in counter.points]
     x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
     cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
-    dl = ((x1 - x0) ** 2 + (y1 - y0) ** 2) ** 0.5
-    import math
     slant = math.atan2(y1 - y0, x1 - x0) - math.radians(ZERO_SLASH_LEAN)
     dx, dy = math.cos(slant), math.sin(slant)
 
@@ -426,9 +419,8 @@ def slashed_zero(font):
             self.cur = p3
         def _closePath(self): self.pts.append(self.pts[0])
 
-    def reach(contour, sign, ox=0, oy=0):
-        """Distance to the contour along the slant, in the direction sign, from the centre moved
-        by (ox, oy)."""
+    def reach(contour, sign):
+        """Distance from the centre to the contour along the slant, in the direction sign."""
         pen = Flatten(); contour.draw(pen); pts = pen.pts
         ddx, ddy = sign * dx, sign * dy
         hits = []
@@ -437,49 +429,25 @@ def slashed_zero(font):
             det = ddx * ey - ddy * ex            # the ray (cx,cy)+t(ddx,ddy) against the segment p+s(e)
             if abs(det) < 1e-9:
                 continue
-            wx, wy = px - cx - ox, py - cy - oy
+            wx, wy = px - cx, py - cy
             t = (wx * ey - wy * ex) / det
             s = (ddy * wx - ddx * wy) / det
             if t > 0 and 0 <= s <= 1:
                 hits.append(t)
         return min(hits)
 
-    w = ZERO_SLASH_STROKE * (x1 - x0) / 2
-    # the gap is kept from whichever of the bar's two edges meets the counter first, not from
-    # its centreline: the Bold's bar is wide in a narrow counter, and its corners reach the wall
-    # well before its middle does
-    ex, ey = -dy * w * dy, dx * w * dy             # half the stroke across the slant
     ends = []
     for sign in (-1, 1):
-        end = min(reach(counter, sign, ex, ey), reach(counter, sign, -ex, -ey)) - ZERO_SLASH_GAP
+        end = (reach(counter, sign) + reach(ring, sign)) / 2
         ends.append((cx + sign * dx * end, cy + sign * dy * end))
     (ax, ay), (bx, by) = ends
-    # the ends cut square, perpendicular to the slash like the chevrons' arms and the cross's
-    # bars, not level: (nx, ny) is half the stroke across the slant. The stroke is 2w measured
-    # level, as before, so across the slant it is 2w * dy.
-    h = w * dy
+    h = ZERO_SLASH_STROKE * weight_ratio(font, "operator") / 2 * dy     # half the stroke across the slant
     nx, ny = -dy * h, dx * h
-    if ZERO_SLASH_CUT == "level":
-        nx, ny = -w, 0
-    elif ZERO_SLASH_CUT == "upright":
-        nx, ny = 0, h / dx
-    # wound the same way as the outer ring (clockwise in Hack's sources), so it fills inside the
-    # counter, and where a negative gap runs it into the ring overlap removal unions the two
-    # instead of cutting a slash-shaped hole
+    # wound the same way as the outer ring (clockwise in Hack's sources), so overlap removal
+    # unions it with the ring instead of cutting a slash-shaped hole through it
     pen = glyph.getPen()
-    pen.moveTo((ax + nx, ay + ny)); pen.lineTo((bx + nx, by + ny))
-    if ZERO_SLASH_CUT == "round":
-        k, tx, ty = 0.5523, dx * h, dy * h         # a half circle over each end, two quarter arcs
-        def cap(cx_, cy_, ux, uy, vx, vy):
-            pen.curveTo((cx_ + ux + k * vx, cy_ + uy + k * vy), (cx_ + vx + k * ux, cy_ + vy + k * uy), (cx_ + vx, cy_ + vy))
-            pen.curveTo((cx_ + vx - k * ux, cy_ + vy - k * uy), (cx_ - ux + k * vx, cy_ - uy + k * vy), (cx_ - ux, cy_ - uy))
-        cap(bx, by, nx, ny, tx, ty)
-        pen.lineTo((ax - nx, ay - ny))
-        cap(ax, ay, -nx, -ny, -tx, -ty)
-    else:
-        pen.lineTo((bx - nx, by - ny)); pen.lineTo((ax - nx, ay - ny))
-    pen.closePath()
-    note("zero", "the dot removed and a slash drawn in the counter, a bar with square ends", "toyon", "draw")
+    pen.moveTo((ax + nx, ay + ny)); pen.lineTo((bx + nx, by + ny)); pen.lineTo((bx - nx, by - ny)); pen.lineTo((ax - nx, ay - ny)); pen.closePath()
+    note("zero", "the dot removed and a slash drawn through, as Menlo's", "m", "draw")
 
 
 # The t's tail: Toyon's signature, a diagonal rising out of the stem's foot, which t.toyon
