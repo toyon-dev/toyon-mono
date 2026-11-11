@@ -230,12 +230,20 @@ def round_tittles(font):
 
 def low_asterisk(font):
     """The asterisk on the operator line rather than floating high, where Hack centres it at
-    920, and ASTERISK_WIDTH across. Hack's own arms; the position and the size are Toyon's."""
+    920, and ASTERISK_WIDTH across. Hack's own arms; the position and the size are Toyon's.
+    It is the hub that sits on the line, not the middle of the box: with one arm up and two
+    legs down, a five-armed star's box runs further above its hub than below, and centred by
+    the box the hub hangs 38 under the plus's and the cross's. The hub is found as the ink's
+    centre of mass, which five equal arms put where they meet."""
+    from fontTools.pens.statisticsPen import StatisticsPen
     glyph = font["asterisk"]
     x0, y0, x1, y1 = bounds(glyph, font.layers.defaultLayer)
     cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
     scale = ASTERISK_WIDTH / (x1 - x0)             # Hack's is 972 across
     transform_in_place(glyph, Transform().translate(cx, OPERATOR_LINE).scale(scale).translate(-cx, -cy))
+    ink = StatisticsPen(glyphset=font)
+    glyph.draw(ink)
+    transform_in_place(glyph, Transform().translate(0, OPERATOR_LINE - ink.meanY))
     note("asterisk", "moved down onto the operator line, with the other operators", "toyon")
 
 
@@ -260,7 +268,7 @@ def underscore_on_baseline(font):
 # read as one height. Hack's parens run deeper and shorter (-270 to 1554), its brackets and
 # braces deeper and taller (to 1636), and its bar fills the whole line (-483 to 1565) and joins
 # into a rule when stacked. Applied after the picks, so a DejaVu paren gets it too.
-ENCLOSURE_SPAN = (-230, 1550)
+ENCLOSURE_SPAN = (-190, 1590)     # its middle is OPERATOR_LINE; the two move together
 ENCLOSURES = ["parenleft", "parenright", "bracketleft", "bracketright", "braceleft", "braceright", "bar",
               "slash", "backslash"]
 
@@ -274,15 +282,21 @@ ENCLOSURES = ["parenleft", "parenright", "bracketleft", "bracketright", "bracele
 # never by scaling, so stroke thickness and end shapes stay; a point within a stem's reach of
 # the centre (the upright of the plus) does not move.
 OPERATOR_WIDTH = 1000     # between Vera's hyphen and its equals; Menlo's 1057 reads as the right size in the app
-OPERATORS = ["hyphen", "equal", "plus", "endash"]      # the underscore has its own width, below
+OPERATORS = ["hyphen", "equal", "plus", "endash", "minus", "divide", "plusminus"]      # the underscore has its own width, below
 BARS = ["underscore", "endash", "emdash"]
 # And one centre line for all of them. Vera spreads the operators over three: the dashes at
 # 563, the hyphen and tilde at 601, the maths signs at 641. Toyon centres every one on a single
 # line, OPERATOR_LINE, and that line is the enclosures' centre too (the middle of
 # ENCLOSURE_SPAN), so a chevron's tip, a hyphen and a brace's point all meet.
-OPERATOR_LINE = 660       # just over Vera's maths line
+OPERATOR_LINE = 700       # between the lowercase's middle, 560, and the digits' and capitals', 746. Vera's maths line
+                          # is 641 and Menlo's 650; there a sign beside a digit, +89, sits visibly low. At 700 that
+                          # error is halved and the hyphen inside a word, foo-bar, is still not floating; at 746 it is
 EQUALS_HEIGHT = 640       # the equals' bars at Menlo's spacing, outside to outside; Vera's is 578
-CENTRED = ["hyphen", "equal", "plus", "endash", "emdash", "asciitilde", "multiply", "less", "greater"]
+CENTRED = ["hyphen", "equal", "plus", "endash", "emdash", "asciitilde", "multiply", "less", "greater", "minus", "divide"]
+# The maths signs beyond ASCII are in the lists too. Vera, and Hack, DejaVu and Menlo after it,
+# leave them at 1057 wide on a line 18 lower, so a true minus is wider and lower than the hyphen
+# beside it. The plus-minus takes the width only: it stands on the baseline, as Vera drew it.
+NOTEQUAL_SLASH = (856, 1105, 1398)    # the not-equal sign's slash: Vera's slant, as a run and a rise, and its length
 
 
 BAR_STROKE = 172          # the dashes at the stem's weight; Vera's hyphen was 164 against its equals at 170
@@ -291,7 +305,7 @@ BAR_STROKE = 172          # the dashes at the stem's weight; Vera's hyphen was 1
 def operator_widths(font):
     layer = font.layers.defaultLayer
     ratio = weight_ratio(font, "operator")
-    for name in ["hyphen"] + BARS:
+    for name in ["hyphen", "minus"] + BARS:
         glyph = font[name]
         x0, y0, x1, y1 = bounds(glyph, layer)
         cy = (y0 + y1) / 2
@@ -348,6 +362,34 @@ def operator_widths(font):
             elif pt.y < cy - 150:
                 pt.y -= d
     note("plus", "the upright brought in to make it square", "toyon", "draw")
+    # the division sign's dots are round, like every other dot here; Vera's are squares
+    round_dots(font["divide"])
+    # the not-equal sign is the equals as it now stands with Vera's slash through it, at the
+    # bars' stroke and centred on them, so it differs from the equals by the slash alone
+    import copy, math
+    glyph, equal = font["notequal"], font["equal"]
+    glyph.clearContours()
+    for c in equal.contours:
+        glyph.contours.append(copy.deepcopy(c))
+    x0, y0, x1, y1 = bounds(equal, layer)
+    cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+    run, rise, length = NOTEQUAL_SLASH
+    dl = math.hypot(run, rise)
+    dx, dy = run / dl * length / 2, rise / dl * length / 2
+    stroke = BAR_STROKE * ratio
+    nx, ny = -rise / dl * stroke / 2, run / dl * stroke / 2
+    slash = [(cx - dx + nx, cy - dy + ny), (cx + dx + nx, cy + dy + ny), (cx + dx - nx, cy + dy - ny), (cx - dx - nx, cy - dy - ny)]
+    def turn(pts):
+        return sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(pts, pts[1:] + pts[:1]))
+    bar = [(pt.x, pt.y) for pt in equal.contours[0].points]
+    if (turn(slash) > 0) != (turn(bar) > 0):
+        slash.reverse()                            # wound like the bars, so overlap removal unions them
+    pen = glyph.getPen()
+    pen.moveTo(slash[0])
+    for pt in slash[1:]:
+        pen.lineTo(pt)
+    pen.closePath()
+    note("notequal", "the equals with Vera's slash through it, at the bars' stroke", "toyon", "draw")
 
 
 def span_enclosures(font):
@@ -358,6 +400,16 @@ def span_enclosures(font):
         t = Transform().translate(0, lo).scale(1, (hi - lo) / (y1 - y0)).translate(0, -y0)
         transform_in_place(glyph, t)
         note(name, f"set on the enclosure span, {lo} to {hi}", "toyon")
+    # the two slashes in the middle of the cell, so they mirror each other. Vera sets both 26
+    # to the left; Hack moved the Regular's backslash to the middle and left its slash behind,
+    # so / and \ sat on different centres in the Regular alone.
+    for name in ["slash", "backslash"]:
+        glyph = font[name]
+        x0, y0, x1, y1 = bounds(glyph, font.layers.defaultLayer)
+        shift = glyph.width / 2 - (x0 + x1) / 2
+        if abs(shift) > 1:
+            transform_in_place(glyph, Transform().translate(shift, 0))
+            note(name, "moved to the middle of the cell, to mirror the other slash", "toyon")
 
 
 def box(name, w, h, cy):
@@ -711,17 +763,24 @@ def hooked_t(font, name="t"):
     pts[idx[0]:idx[1] + 1] = new
 
 
-def slanted_compare(font, name, chevron):
+def slanted_compare(font, name, chevron, cells=2):
     """Toyon's <= and >=: the chevron, with a second stroke under it parallel to the lower arm,
-    rather than the family's sign with a level bar. Two cells wide, the chevron lifted a little and the bar below it, centred in the pair. Built
-    from the chevron as the picks left it."""
+    rather than the family's sign with a level bar. Two cells wide, the chevron lifted a little
+    and the bar below it, centred in the pair. Built from the chevron as the picks left it.
+    With cells=1 the same drawing replaces the one-cell sign the family draws, so the
+    character and the ligature are one sign at two widths."""
     src = font[chevron]
     x0, y0, x1, y1 = bounds(src, font.layers.defaultLayer)
     cell = src.width
     cy = (y0 + y1) / 2
     drop = 180                                    # the gap between the arm and the bar, one stroke
-    glyph = font.newGlyph(name)
-    glyph.width = 2 * cell
+    if name in font:
+        glyph = font[name]
+        glyph.clearContours()
+    else:
+        glyph = font.newGlyph(name)
+    glyph.width = cells * cell
+    half = cells * cell / 2
     # the whole sign, chevron and bar, is centred on the operator line: the chevron rises by
     # half of what the bar adds below it, the gap plus the bar's vertical thickness
     import math
@@ -729,7 +788,7 @@ def slanted_compare(font, name, chevron):
     across0 = CHEVRON_STROKE * weight_ratio(font, "operator")
     arm_angle = math.atan(((y1 - y0) / 2) / (x1 - x0))
     lift = (drop + across0 / math.cos(arm_angle)) / 2
-    shift = Transform().translate(cell - (x0 + x1) / 2, lift)
+    shift = Transform().translate(half - (x0 + x1) / 2, lift)
     src.draw(TransformPen(glyph.getPen(), shift))
     # the lower arm's outer edge, read off the chevron's own points: from the far end's bottom
     # corner to the apex's lower corner (the apex is a short vertical cut, so the bbox centre is
@@ -758,7 +817,7 @@ def slanted_compare(font, name, chevron):
     pts = [(x, y - tv) for x, y in pts]            # the arm's outer edge is its lower edge; the bar hangs below it by its own thickness
     if chevron == "less":
         pts = [pts[0], pts[3], pts[2], pts[1]]     # clockwise, like the chevron
-    pen = TransformPen(glyph.getPen(), Transform().translate(cell - (x0 + x1) / 2, lift - drop))
+    pen = TransformPen(glyph.getPen(), Transform().translate(half - (x0 + x1) / 2, lift - drop))
     pen.moveTo(pts[0])
     for pt in pts[1:]:
         pen.lineTo(pt)
@@ -871,6 +930,12 @@ def ligatures(font, chosen):
         if name not in order:
             order.append(name)
     font.lib["public.glyphOrder"] = order
+    # the one-cell signs drawn the same way as their ligatures, after the ligatures are made
+    # (a stretched ligature is built from the family's sign and needs it untouched)
+    for seq, name, chevron in [("<=", "lessequal", "less"), (">=", "greaterequal", "greater")]:
+        if chosen.get(seq) == "toyon":
+            slanted_compare(font, name, chevron, cells=1)
+            note(name, "the chevron with a bar parallel to its lower arm, as the ligature", "toyon", "draw")
     kerns = [kern_rule(*spec) for seq, spec in KERNS.items() if chosen.get(seq) != "dv"]
     fea = "\n# Toyon: the ligatures, as two-cell glyphs. Added by tools/hack-forge.py.\n"
     if subs:
@@ -1249,6 +1314,8 @@ def thin_chevrons(font):
 # . : ; ! ? is scaled to DOT_SIZE, a dot on the baseline about its base so it keeps its
 # overshoot, a raised dot about its centre; the comma, alone and in the semicolon, is scaled by
 # the same factor about the baseline so its head matches.
+COLON_GAP = 1.0           # the least air between the colon's two dots, in dots: Menlo keeps 1.26 in its Regular and 0.99
+                          # in its Bold; without this the Bold's is 0.79
 DOT_SIZE = 350            # as wide as Menlo's square period, whose ink a circle cannot match: Hack's 324 reads faint
                           # beside it at 11 to 13 px; at 375 the two dots of the colon close up, most of all in the Bold
 
@@ -1269,6 +1336,18 @@ def dot_sizes(font):
             for pt in c.points:
                 pt.x, pt.y = t.transformPoint((pt.x, pt.y))
         note(name, f"the dot set to {DOT_SIZE}, one size for the punctuation dots", "toyon", "draw")
+    # the colon's dots stay COLON_GAP of a dot apart: both grow toward each other as they are
+    # sized up, most of all in the Bold. The upper dot is lifted to keep the gap, and the
+    # semicolon's dot by the same amount.
+    colon = sorted(font["colon"].contours, key=lambda c: min(p.y for p in c.points))
+    width = max(p.x for p in colon[1].points) - min(p.x for p in colon[1].points)
+    lift = COLON_GAP * width - (min(p.y for p in colon[1].points) - max(p.y for p in colon[0].points))
+    if lift > 1:
+        for name in ["colon", "semicolon"]:
+            upper = max(font[name].contours, key=lambda c: min(p.y for p in c.points))
+            for pt in upper.points:
+                pt.y += lift
+            note(name, f"the upper dot lifted to keep {COLON_GAP:g} of a dot between the two", "toyon")
     factor = DOT_SIZE / 324
     for name in ["comma", "semicolon"]:
         glyph = font[name]
@@ -1309,7 +1388,7 @@ def question_dot(font):
 # centred on the operator line, in a box CROSS_BOX square. Scaling Hack's cross down to that
 # box thins its stroke to 150, so it is drawn rather than scaled. fontmake's overlap removal
 # merges the two bars.
-CROSS_BOX = 843
+CROSS_BOX = 883           # Menlo's cross is 0.88 of its plus (933 of 1057); this is 0.88 of ours
 
 
 def draw_cross(font):
@@ -1357,7 +1436,8 @@ def widen_n(font):
 # Toyon's own rules, applied whatever is picked, like the enclosure span: the asterisk on the
 # operator line, the slashed zero, round tittles, the lifted crossbars, the quotes at Menlo's
 # weight, the question mark, the e's bar, the chevrons, the dots, the cross, the N.
-ASTERISK_WIDTH = 1060     # near Menlo's 1119; the chevrons' 911 is too small
+ASTERISK_WIDTH = 1119     # Menlo's: five arms leave a gap between the legs that six do not, so at 1060 it read smaller
+                          # than Menlo's and high beside digits, 4*8; at 1180 it crowds the slash in /* and its twin in **
 CHEVRON_HEIGHT = 1192     # taller than the family's 1002, so more open; 1300 reads as a billboard
 CHEVRON_LEAN = 21         # placed off centre toward what they enclose: < to the right, > to the left
 CHEVRON_WIDTH = 911       # narrower than the family's 1057

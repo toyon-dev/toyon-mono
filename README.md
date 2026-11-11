@@ -18,16 +18,21 @@ order:
    `toyon` applies Toyon's own position or drawing to Hack's glyph, and a glyph absent from the
    file is Hack's;
 3. applies its own rules, whatever is picked:
-   - every operator on one line, 660 of 2048, and the enclosures `( ) [ ] { } | / \` on one span,
-     -230 to 1550, centred on that same line, so a chevron's tip, a hyphen and a brace's point
+   - every operator on one line, 700 of 2048, and the enclosures `( ) [ ] { } | / \` on one span,
+     -190 to 1590, centred on that same line, so a chevron's tip, a hyphen and a brace's point
      meet;
    - the hyphen, equals, plus and en dash at one width, 1000, and the hyphen and dashes at the
      stem's stroke; the plus square; the equals spread to Menlo's spacing; the underscore on the
      baseline at the operator width and Vera's thinner stroke;
    - the chevrons narrower and taller than the family's, 911 by 1192, leaned toward what they
      enclose, sharpened to a flat the hyphen's thickness, cut square at the ends and thinned to
-     the operator stroke; the cross drawn fresh as two bars of that stroke; the asterisk at 1060,
-     near Menlo's size;
+     the operator stroke; the cross drawn fresh as two bars of that stroke; the asterisk at 1119,
+     Menlo's size, its hub on the line;
+   - the maths signs beyond ASCII on the same rule, which Vera and every face after it leave
+     wider and lower: the minus and the division sign at the operator width and line, the
+     division sign's dots round, the plus-minus at that width, the not-equal sign as the equals
+     with a slash through it, and `≤ ≥` drawn as their ligatures are;
+   - the colon's two dots kept a dot apart in both weights;
    - a zero slashed as Menlo's is, the slash ending inside the ring; round tittles on i and j;
      one size for the punctuation dots, with the commas scaled to match; the question mark,
      whoever drew it, punctuated like the exclamation mark,
