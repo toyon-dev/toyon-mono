@@ -20,7 +20,8 @@ order:
 3. applies its own rules, whatever is picked:
    - every operator on one line, 700 of 2048, and the enclosures `( ) [ ] { } | / \` on one span,
      -190 to 1590, centred on that same line, so a chevron's tip, a hyphen and a brace's point
-     meet;
+     meet; and, when picked Toyon's, the brace's point taken in by 60 and its hooks longer by
+     the same, so it holds its own beside Hack's wide bracket (`picks.json` picks it);
    - the hyphen, equals, plus and en dash at one width, 1000, and the hyphen and dashes at the
      stem's stroke; the plus square; the equals spread to Menlo's spacing; the underscore on the
      baseline at the operator width and Vera's thinner stroke;

@@ -17,7 +17,8 @@ so no weight can be interpolated between them):
        - DejaVu: the glyph copied from DejaVu Sans Mono outline for outline (same units per
          em, same cell, same licence);
        - Toyon: the underscore on the baseline; the chevrons and the multiplication sign
-         narrower and taller than the family's; the t with its tail turned up;
+         narrower and taller than the family's; the t with its tail turned up; the brace's
+         point taken in;
      a pick of Menlo's is for the eye only, since Menlo cannot be copied: the glyph stays Hack's
      and the build says so;
   3. apply Toyon's own rules whatever is picked: every operator on one line (OPERATOR_LINE) and
@@ -423,6 +424,28 @@ def box(name, w, h, cy):
         t = Transform().translate(cx, cy).scale(w / (x1 - x0), h / (y1 - y0)).translate(-cx, -cy0)
         transform_in_place(glyph, t)
         note(name, f"resized to {w} by {h}", "toyon")
+    return apply
+
+
+# The brace's point taken in. Hack's bracket is wide, 624 across with its stem at 323; its brace
+# is still Vera's, a spine at 490 with a point 363 long in front of a body 482 wide, so beside
+# the bracket the brace reads as the smaller pair, where in Vera and Menlo it is the larger. The
+# drawing stays Hack's: the tip and the hooks' ends stay where they are and everything between
+# them moves toward the tip by BRACE_POINT_IN, so the point is that much shorter and the hooks
+# that much longer, all of it added to their straight run.
+BRACE_POINT_IN = 60       # of the point's 363; a brace redrawn square on the bracket's frame reads as a bracket at 16 px
+
+
+def brace(name):
+    def apply(font):
+        glyph = font[name]
+        x0, _, x1, _ = bounds(glyph, font.layers.defaultLayer)
+        tip, end, toward = (x0, x1, -1) if name == "braceleft" else (x1, x0, 1)
+        for contour in glyph.contours:
+            for pt in contour.points:
+                if abs(pt.x - tip) > 1 and abs(pt.x - end) > 1:
+                    pt.x += toward * BRACE_POINT_IN
+        note(name, f"the point taken in {BRACE_POINT_IN}, the hooks that much longer", "toyon", "draw")
     return apply
 
 
@@ -1447,6 +1470,7 @@ CHEVRON_TIP = 172         # the apex's flat, the hyphen's thickness, so <- and -
 ALWAYS = [low_asterisk, slashed_zero, round_tittles, lift_cap_bars, menlo_quotes, question_terminal, lift_e_bar, menlo_one, thin_chevrons, dot_sizes, question_dot, draw_cross, widen_n]
 PICK_OFF = {question_terminal: "?"}     # a rule a "dv" pick on its character switches off: the glyph is then DejaVu's, copied in
 MOVES = {"toyon": {"_": underscore_on_baseline, "<": box("less", CHEVRON_WIDTH, CHEVRON_HEIGHT, OPERATOR_LINE), ">": box("greater", CHEVRON_WIDTH, CHEVRON_HEIGHT, OPERATOR_LINE),
+                   "{": brace("braceleft"), "}": brace("braceright"),
                    "\u00d7": lambda font: None, "?": lambda font: None, "t": hooked_t}}   # the cross is drawn by its rule whatever is picked, the question mark by its unless picked "dv"
 NAMES = {"dv": "DejaVu", "toyon": "Toyon", "hk": "Hack", "m": "Menlo"}
 

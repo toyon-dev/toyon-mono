@@ -30,10 +30,13 @@
     "f": "dv",
     "g": "dv",
     "i": "dv",
+    "j": "dv",
     "k": "dv",
     "l": "dv",
     "r": "dv",
     "t": "dv",
+    "{": "toyon",
+    "}": "toyon",
     "×": "toyon"
   }
 }
