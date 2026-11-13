@@ -1407,18 +1407,21 @@ def question_dot(font):
     note("question", "the exclamation mark's dot, and its stem ended where the exclamation's ends", "toyon", "draw")
 
 
-# The multiplication sign drawn fresh: two bars of the chevrons' stroke crossing at 45 degrees,
-# centred on the operator line, in a box CROSS_BOX square. Scaling Hack's cross down to that
-# box thins its stroke to 150, so it is drawn rather than scaled. fontmake's overlap removal
-# merges the two bars.
-CROSS_BOX = 883           # Menlo's cross is 0.88 of its plus (933 of 1057); this is 0.88 of ours
+# The multiplication sign drawn fresh: two bars of the plus's stroke crossing at 45 degrees,
+# centred on the operator line, in a box CROSS_BOX square. That is the family's cross, which
+# Vera drew at its plus's stroke and DejaVu, Hack and Menlo kept, raised from 641 to the line.
+# It is drawn rather than moved so the Bold holds the Regular's box, as the plus does (the
+# family's Bold grows to 992). fontmake's overlap removal merges the two bars.
+CROSS_BOX = 933           # the family's. At 0.88 of our plus, 883, and the chevrons' 180 stroke, it read small beside the asterisk and the x
 
 
 def draw_cross(font):
     import math
     glyph = font["multiply"]
     bx0, _, bx1, _ = bounds(font["bar"], font.layers.defaultLayer)
-    t = CHEVRON_STROKE * weight_ratio(font, "operator")
+    xs = sorted({round(p.x) for c in font["plus"].contours for p in c.points})
+    assert len(xs) == 4, f"the plus is not two plain bars: {xs}"
+    t = xs[2] - xs[1]                              # the plus's upright: 168, and 237 in the Bold
     for c in list(glyph.contours):
         glyph.contours.remove(c)
     cx, cy = glyph.width / 2, OPERATOR_LINE
@@ -1436,7 +1439,7 @@ def draw_cross(font):
         for pt in corners[1:]:
             pen.lineTo(pt)
         pen.closePath()
-    note("multiply", f"drawn as two bars of {CHEVRON_STROKE} crossing at 45 degrees in a {CROSS_BOX} box", "toyon", "draw")
+    note("multiply", f"drawn as two bars of the plus's stroke, {round(t)}, crossing at 45 degrees in a {CROSS_BOX} box", "toyon", "draw")
 
 
 # The N at Menlo's width: Vera's is 955 across, Menlo's 1075, extended to the left. The left stem

@@ -27,8 +27,8 @@ order:
      baseline at the operator width and Vera's thinner stroke;
    - the chevrons narrower and taller than the family's, 911 by 1192, leaned toward what they
      enclose, sharpened to a flat the hyphen's thickness, cut square at the ends and thinned to
-     the operator stroke; the cross drawn fresh as two bars of that stroke; the asterisk at 1119,
-     Menlo's size, its hub on the line;
+     the operator stroke; the cross at the family's size, 933, drawn fresh as two bars of the
+     plus's stroke; the asterisk at 1119, Menlo's size, its hub on the line;
    - the maths signs beyond ASCII on the same rule, which Vera and every face after it leave
      wider and lower: the minus and the division sign at the operator width and line, the
      division sign's dots round, the plus-minus at that width, the not-equal sign as the equals
