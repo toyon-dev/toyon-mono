@@ -1,73 +1,100 @@
 # Toyon Mono
 
-![Toyon Mono in Regular and Bold: a code sample, then its operators and letters beside Hack's](specimen.svg)
+![Toyon Mono in Regular and Bold: a code sample, then Hack's operators and letters above Toyon Mono's](specimen.svg)
 
-The monospaced face of the Toyon app. It is Hack, which is DejaVu Sans Mono, which is
-Bitstream Vera Sans Mono, with Toyon's own choices applied by a script to Hack's sources, so
-that every choice is a number and a build, not a drawing kept in an editor.
+Toyon Mono is the monospaced font of the [Toyon](https://toyon.dev) app. It is built from
+[Hack](https://github.com/source-foundry/Hack), which is DejaVu Sans Mono with some glyphs
+redrawn for code. Toyon Mono puts most of the redrawn letters back to DejaVu's drawing and draws
+its own operators, brackets and punctuation. It has two weights, Regular and Bold.
 
-`fonts/` holds the result, Regular and Bold, as TTF and woff2. `./build.sh` rebuilds them from
-scratch: it clones Hack 3.003, fetches DejaVu Sans Mono 2.37, makes a Python environment with
-fontmake, and runs `tools/forge.py`.
+## Use
 
-The picture above is `specimen.svg`. `build/env/bin/python tools/specimen.py` draws it again
-from the built fonts, with Hack's rows read from the clone in `build/`.
+The fonts are in `fonts/`.
 
-## What the build does to Hack
+- `ToyonMono-Regular.ttf` and `ToyonMono-Bold.ttf`: install these on your machine.
+- `toyon-mono-regular.woff2` and `toyon-mono-bold.woff2`: serve these on the web.
 
-Hack is DejaVu Sans Mono with 31 ASCII glyphs redrawn for code. Toyon starts from Hack and, in
-order:
+```css
+@font-face {
+  font-family: "Toyon Mono";
+  font-weight: 400;
+  src: url("toyon-mono-regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Toyon Mono";
+  font-weight: 700;
+  src: url("toyon-mono-bold.woff2") format("woff2");
+}
+```
 
-1. renames the font and carries Hack's, DejaVu's and Bitstream's notices in its name table;
-2. applies `picks.json`, one face per glyph: `dv` copies DejaVu's outline in over Hack's redraw,
-   `toyon` applies Toyon's own position or drawing to Hack's glyph, and a glyph absent from the
-   file is Hack's;
-3. applies its own rules, whatever is picked:
-   - every operator on one line, 700 of 2048, and the enclosures `( ) [ ] { } | / \` on one span,
-     -190 to 1590, centred on that same line, so a chevron's tip, a hyphen and a brace's point
-     meet; and, when picked Toyon's, the brace's point taken in by 60 and its hooks longer by
-     the same, so it holds its own beside Hack's wide bracket (`picks.json` picks it);
-   - the hyphen, equals, plus and en dash at one width, 1000, and the hyphen and dashes at the
-     stem's stroke; the plus square; the equals spread to Menlo's spacing; the underscore on the
-     baseline at the operator width and Vera's thinner stroke;
-   - the chevrons narrower and taller than the family's, 911 by 1192, leaned toward what they
-     enclose, sharpened to a flat the hyphen's thickness, cut square at the ends and thinned to
-     the operator stroke; the cross at the family's size, 933, drawn fresh as two bars of the
-     plus's stroke; the asterisk at 1119, Menlo's size, its hub on the line;
-   - the maths signs beyond ASCII on the same rule, which Vera and every face after it leave
-     wider and lower: the minus and the division sign at the operator width and line, the
-     division sign's dots round, the plus-minus at that width, the not-equal sign as the equals
-     with a slash through it, and `≤ ≥` drawn as their ligatures are;
-   - the colon's two dots kept a dot apart in both weights;
-   - a zero slashed as Menlo's is, the slash ending inside the ring; round tittles on i and j;
-     one size for the dots of `. : ;`, with the commas scaled to match, and a smaller one,
-     Menlo's, under `! ?`; the question mark,
-     whoever drew it, punctuated like the exclamation mark,
-     with its dot and its stem ending where the exclamation's does, and when picked Toyon's drawn
-     as an arc with its terminal turned down (`picks.json` picks DejaVu's);
-   - the crossbars of `B E F H` and the `e` lifted to Menlo's height, which opens the `e`;
-   - the quote marks, straight and curly, at Menlo's weight; the `1` with Menlo's longer flag;
-     the `N` halfway to Menlo's width;
-   - inside the word toyon, a `t` with its top cut on a slant and its tail rising, by a
-     contextual rule; every other `t` is Vera's;
-4. adds the ligatures `<= >=` (a chevron with a bar parallel to its lower arm) and `-> <-`, and
-   the kern rules that draw `|| //` closer without changing any advance (`!=` has one too,
-   which `picks.json` switches off);
-5. builds with fontmake and writes `fonts/`.
+In CSS, a weight of 500 resolves to Regular and 600 to Bold.
 
-Each number has a comment in `tools/forge.py` saying what it does and where it came from. The
-research behind the choices, the review pages, the votes and the measurements, lives in the
-`toyon-mono` repository.
+`<=` and `>=` are ligatures, and the `t` in the word toyon has its own shape. Both use the
+`calt` feature. In an editor or terminal, turn on the ligature setting to see them. To turn them
+off in CSS, set `font-variant-ligatures: no-contextual`.
 
-## Weights
+The fonts are not hinted. They are built for macOS and browsers.
 
-Hack has Regular and Bold and its masters do not interpolate, so there are two weights. An app
-asking for 500 or 600 gets whatever its text engine does with 400 and 700. Every rule scales
-its strokes for the Bold by Hack's own Bold ratio for that family of glyph, read from the
-sources: letters 1.53, operators 1.38, dots 1.09, quotes 1.47.
+## Differences from Hack
+
+The picture shows Hack above and Toyon Mono below.
+
+Operators and brackets:
+
+- `- + = * < >` sit on one line, so a hyphen meets the tip of a chevron.
+- `( ) [ ] { } | / \` have one height and are centred on that line.
+- `- = +` and the en dash have one width.
+- `< >` are narrower, taller and sharper.
+- `*` is larger. `×` has the stroke of the plus.
+- `{ }` have a shorter point and longer hooks.
+- `_` sits on the baseline.
+- The minus, division, plus-minus and not-equal signs follow the same line and width.
+- `<=` and `>=` are ligatures: the chevron with a bar parallel to its lower arm. `≤ ≥` are drawn
+  the same way.
+- `||` and `//` are drawn closer together. Each character keeps its cell.
+
+Letters, digits and punctuation:
+
+- `c f g i j k l r Q 1 3 ! ? $ ( )` are DejaVu's drawing. Hack redrew them.
+- `0` has a slash that ends inside the ring.
+- `i j` have round dots.
+- `. : ;` have dots of one size. The dots under `! ?` are smaller.
+- The crossbars of `B E F H` and `e` are higher.
+- `N` is wider. `1` has a longer flag. The quote marks are larger.
+- In the word toyon, `t` has a slanted top and a rising tail.
+
+## Build
+
+Requires git, curl, unzip and [uv](https://docs.astral.sh/uv/).
+
+```sh
+./build.sh            # both weights
+./build.sh Regular    # one weight: Regular or Bold
+```
+
+`fonts/` is generated by a script from Hack's sources. `build.sh` clones Hack 3.003 and
+downloads DejaVu Sans Mono 2.37 into `build/`, installs fontmake there, and runs
+`tools/forge.py`. That script:
+
+1. renames the font and keeps Hack's, DejaVu's and Bitstream's notices in the name table;
+2. applies `picks.json`;
+3. applies the rules listed above;
+4. adds the ligatures and the kerning for `||` and `//`;
+5. compiles with fontmake and writes `fonts/`.
+
+`picks.json` sets the drawing for each glyph: `dv` for DejaVu's, `hk` for Hack's, `toyon` for
+Toyon's. A glyph that is not listed is Hack's. For the pairs `!=`, `->` and `<-`, `dv` leaves
+the two characters as they are.
+
+To change a glyph, edit `picks.json` or a constant in `tools/forge.py`, then run `./build.sh`.
+Each constant has a comment with what it does and where the number came from.
+
+Hack's Regular and Bold do not interpolate, so there are no weights between them.
+
+To redraw the picture, run `build/env/bin/python tools/specimen.py` after a build.
 
 ## Licence
 
-See `LICENSE.md`: the Toyon modifications are MIT; Hack is MIT; DejaVu's changes are public
-domain; Bitstream Vera Sans Mono is under the Bitstream Vera licence, which is why the font is
-not called Hack or Vera.
+The Toyon changes are MIT. Hack is MIT. DejaVu's changes are in the public domain. Bitstream
+Vera Sans Mono is under the Bitstream Vera licence. That licence reserves the names Bitstream
+and Vera, and Hack asks that modified versions not use its name. `LICENSE.md` has the full text.
