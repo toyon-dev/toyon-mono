@@ -786,10 +786,18 @@ def hooked_t(font, name="t"):
     pts[idx[0]:idx[1] + 1] = new
 
 
+# What of <= and >= sits on the operator line. "tip": the chevron's tip, so a <= b and a < b
+# point at the same height and >= -1 meets its hyphen; the bar then hangs below, to about -235
+# (-300 in the Bold), a little past the enclosures' foot. "sign": the middle of chevron and bar
+# together, which keeps the sign between the baseline and the cap height but puts its tip 195
+# above every other chevron's.
+COMPARE_ON = "tip"
+
+
 def slanted_compare(font, name, chevron, cells=2):
     """Toyon's <= and >=: the chevron, with a second stroke under it parallel to the lower arm,
-    rather than the family's sign with a level bar. Two cells wide, the chevron lifted a little
-    and the bar below it, centred in the pair. Built from the chevron as the picks left it.
+    rather than the family's sign with a level bar. Two cells wide, the chevron where < and >
+    have it and the bar below it, centred in the pair. Built from the chevron as the picks left it.
     With cells=1 the same drawing replaces the one-cell sign the family draws, so the
     character and the ligature are one sign at two widths."""
     src = font[chevron]
@@ -804,13 +812,18 @@ def slanted_compare(font, name, chevron, cells=2):
         glyph = font.newGlyph(name)
     glyph.width = cells * cell
     half = cells * cell / 2
-    # the whole sign, chevron and bar, is centred on the operator line: the chevron rises by
-    # half of what the bar adds below it, the gap plus the bar's vertical thickness
     import math
     bx0, _, bx1, _ = bounds(font["bar"], font.layers.defaultLayer)
     across0 = CHEVRON_STROKE * weight_ratio(font, "operator")
     arm_angle = math.atan(((y1 - y0) / 2) / (x1 - x0))
-    lift = (drop + across0 / math.cos(arm_angle)) / 2
+    if COMPARE_ON == "tip":
+        # the chevron stays where < and > have it, so its tip is on the operator line with
+        # theirs and the hyphen's, and the bar hangs under it as an underline does
+        lift = 0
+    else:
+        # the whole sign, chevron and bar, is centred on the operator line: the chevron rises by
+        # half of what the bar adds below it, the gap plus the bar's vertical thickness
+        lift = (drop + across0 / math.cos(arm_angle)) / 2
     shift = Transform().translate(half - (x0 + x1) / 2, lift)
     src.draw(TransformPen(glyph.getPen(), shift))
     # the lower arm's outer edge, read off the chevron's own points: from the far end's bottom

@@ -49,8 +49,8 @@ Operators and brackets:
 - `{ }` have a shorter point and longer hooks.
 - `_` sits on the baseline.
 - The minus, division, plus-minus and not-equal signs follow the same line and width.
-- `<=` and `>=` are ligatures: the chevron with a bar parallel to its lower arm. `≤ ≥` are drawn
-  the same way.
+- `<=` and `>=` are ligatures: the chevron where `<` and `>` have it, so its tip is on the same
+  line, with a bar under it parallel to its lower arm. `≤ ≥` are drawn the same way.
 - `||` and `//` are drawn closer together. Each character keeps its cell.
 
 Letters, digits and punctuation:
