@@ -1,5 +1,7 @@
 # Toyon Mono
 
+![Toyon Mono in Regular and Bold: a code sample, then its operators and letters beside Hack's](specimen.svg)
+
 The monospaced face of the Toyon app. It is Hack, which is DejaVu Sans Mono, which is
 Bitstream Vera Sans Mono, with Toyon's own choices applied by a script to Hack's sources, so
 that every choice is a number and a build, not a drawing kept in an editor.
@@ -7,6 +9,9 @@ that every choice is a number and a build, not a drawing kept in an editor.
 `fonts/` holds the result, Regular and Bold, as TTF and woff2. `./build.sh` rebuilds them from
 scratch: it clones Hack 3.003, fetches DejaVu Sans Mono 2.37, makes a Python environment with
 fontmake, and runs `tools/forge.py`.
+
+The picture above is `specimen.svg`. `build/env/bin/python tools/specimen.py` draws it again
+from the built fonts, with Hack's rows read from the clone in `build/`.
 
 ## What the build does to Hack
 

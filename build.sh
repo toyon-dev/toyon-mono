@@ -23,7 +23,7 @@ fi
 if [ ! -x build/env/bin/python ]; then
     echo "==> python environment"
     uv venv build/env -q
-    uv pip install -p build/env/bin/python -q fontmake ufoLib2 fonttools brotli
+    uv pip install -p build/env/bin/python -q fontmake ufoLib2 fonttools brotli uharfbuzz
 fi
 echo "==> forging"
 build/env/bin/python tools/forge.py "$@"
