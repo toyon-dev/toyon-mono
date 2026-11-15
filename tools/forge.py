@@ -25,10 +25,10 @@ so no weight can be interpolated between them):
      the enclosures on one span centred on it (ENCLOSURE_SPAN); one width for the dashes and the
      stem's stroke for the bars (OPERATOR_WIDTH, BAR_STROKE); the chevrons at Toyon's size,
      leaned, sharpened and thinned; the cross drawn fresh; the asterisk down on the operator
-     line; the slashed zero; round tittles and one size of punctuation dot; the question mark
+     line; the slashed zero; round tittles, one size of dot in . : ; and a smaller one under ! ?; the question mark
      drawn as an arc with its terminal turned down, unless picked DejaVu's; the crossbars of
      B E F H and the e lifted to Menlo's height; the quotes at Menlo's weight, the 1 with Menlo's
-     flag, the N at Menlo's width;
+     flag, the N halfway to Menlo's width;
   4. add the ligatures -> <- <= >= as two-cell glyphs, plus the kern rules that draw || // and
      != closer, and the contextual rule that gives the t its slanted top and tail inside the
      word toyon;
@@ -1331,16 +1331,20 @@ def thin_chevrons(font):
         note(name, f"the apex sharpened to a {CHEVRON_TIP} flat, fitted to {CHEVRON_WIDTH} and leaned {CHEVRON_LEAN}, the stroke {CHEVRON_STROKE} across", "toyon", "draw")
 
 
-# One size for the punctuation dots. Hack's period, colon and semicolon dots are 324 to 338
+# Two sizes for the punctuation dots. Hack's period, colon and semicolon dots are 324 to 338
 # across, DejaVu's exclamation dot 203 (rounded to 229 here), Hack's question dot 292; Menlo's
 # are squares, 352 across in the period and 263 in the exclamation mark. Every round dot in
-# . : ; ! ? is scaled to DOT_SIZE, a dot on the baseline about its base so it keeps its
-# overshoot, a raised dot about its centre; the comma, alone and in the semicolon, is scaled by
-# the same factor about the baseline so its head matches.
+# . : ; is scaled to DOT_SIZE and the dot under ! ? to MARK_DOT_SIZE, a dot on the baseline
+# about its base so it keeps its overshoot, a raised dot about its centre; the comma, alone and
+# in the semicolon, is scaled by the same factor as the period about the baseline so its head
+# matches.
 COLON_GAP = 1.0           # the least air between the colon's two dots, in dots: Menlo keeps 1.26 in its Regular and 0.99
                           # in its Bold; without this the Bold's is 0.79
 DOT_SIZE = 350            # as wide as Menlo's square period, whose ink a circle cannot match: Hack's 324 reads faint
                           # beside it at 11 to 13 px; at 375 the two dots of the colon close up, most of all in the Bold
+MARK_DOT_SIZE = 265       # the dot under ! and ?: Menlo's, three quarters of its period. A dot that has a stem over it
+                          # needs less than one that stands alone: at 350 it outweighed the mark, with 118 of air under
+                          # the stem; the tittles' 208 is the stem's own width and reads as a piece cut off it
 
 
 def dot_sizes(font):
@@ -1348,6 +1352,7 @@ def dot_sizes(font):
     k = weight_ratio(font, "dot")                  # read from the period before it is resized
     for name in ["period", "colon", "semicolon", "exclam", "question"]:
         glyph = font[name]
+        size = MARK_DOT_SIZE if name in ("exclam", "question") else DOT_SIZE
         for c in glyph.contours:
             xs = [p.x for p in c.points]; ys = [p.y for p in c.points]
             w, h = max(xs) - min(xs), max(ys) - min(ys)
@@ -1355,10 +1360,10 @@ def dot_sizes(font):
                 continue                           # a round dot: all curves, near square, small
             cx, cy = (max(xs) + min(xs)) / 2, (max(ys) + min(ys)) / 2
             about = (cx, min(ys)) if min(ys) < 60 else (cx, cy)
-            t = Transform().translate(*about).scale(DOT_SIZE * k / w).translate(-about[0], -about[1])
+            t = Transform().translate(*about).scale(size * k / w).translate(-about[0], -about[1])
             for pt in c.points:
                 pt.x, pt.y = t.transformPoint((pt.x, pt.y))
-        note(name, f"the dot set to {DOT_SIZE}, one size for the punctuation dots", "toyon", "draw")
+        note(name, f"the dot set to {size}", "toyon", "draw")
     # the colon's dots stay COLON_GAP of a dot apart: both grow toward each other as they are
     # sized up, most of all in the Bold. The upper dot is lifted to keep the gap, and the
     # semicolon's dot by the same amount.
@@ -1442,10 +1447,13 @@ def draw_cross(font):
     note("multiply", f"drawn as two bars of the plus's stroke, {round(t)}, crossing at 45 degrees in a {CROSS_BOX} box", "toyon", "draw")
 
 
-# The N at Menlo's width: Vera's is 955 across, Menlo's 1075, extended to the left. The left stem
-# and the top of the diagonal move out by N_WIDEN; the right stem stays, so the stems keep their
-# weight and the diagonal flattens a little.
-N_WIDEN = 120
+# The N halfway to Menlo's width: Vera's is 955 across and Menlo's Regular 1075, extended to the
+# left. The left stem and the top of the diagonal move out by N_WIDEN; the right stem stays, so
+# the stems keep their weight and the diagonal flattens a little. Menlo's 120 leaves 19 of the
+# cell on the left against 139 on the right and an N wider than the M; 60 keeps 79. The same
+# amount in both weights, not scaled for the Bold: Menlo leaves its Bold N as Vera's, and 120
+# scaled by the stems' ratio put the Bold's left stem 65 outside its cell.
+N_WIDEN = 60
 
 
 def widen_n(font):
@@ -1455,8 +1463,8 @@ def widen_n(font):
     for c in glyph.contours:
         for pt in c.points:
             if pt.x < mid:
-                pt.x -= N_WIDEN * weight_ratio(font)
-    note("N", f"widened {N_WIDEN} to the left, to Menlo's width", "m", "draw")
+                pt.x -= N_WIDEN
+    note("N", f"widened {N_WIDEN} to the left, halfway to Menlo's width", "m", "draw")
 
 
 # Toyon's own rules, applied whatever is picked, like the enclosure span: the asterisk on the

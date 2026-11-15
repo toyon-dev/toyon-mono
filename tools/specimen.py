@@ -40,7 +40,7 @@ fn settle(queue: &[Task], limit: usize) -> Result<usize> {
 }"""
 KEYWORDS = re.compile(r"\b(fn|let|mut|for|in|if)\b")
 
-OPERATORS = "<- {[(-=+*×÷)]} -> <= >= ≠ ||"
+OPERATORS = "<{[(-=+*×÷)]}> <= >= ||"
 LETTERS = "0123 aceg fijklrt QN ?! \"'"
 
 COLOURS = {

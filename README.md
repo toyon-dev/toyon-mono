@@ -40,13 +40,14 @@ order:
      with a slash through it, and `≤ ≥` drawn as their ligatures are;
    - the colon's two dots kept a dot apart in both weights;
    - a zero slashed as Menlo's is, the slash ending inside the ring; round tittles on i and j;
-     one size for the punctuation dots, with the commas scaled to match; the question mark,
+     one size for the dots of `. : ;`, with the commas scaled to match, and a smaller one,
+     Menlo's, under `! ?`; the question mark,
      whoever drew it, punctuated like the exclamation mark,
      with its dot and its stem ending where the exclamation's does, and when picked Toyon's drawn
      as an arc with its terminal turned down (`picks.json` picks DejaVu's);
    - the crossbars of `B E F H` and the `e` lifted to Menlo's height, which opens the `e`;
    - the quote marks, straight and curly, at Menlo's weight; the `1` with Menlo's longer flag;
-     the `N` at Menlo's width;
+     the `N` halfway to Menlo's width;
    - inside the word toyon, a `t` with its top cut on a slant and its tail rising, by a
      contextual rule; every other `t` is Vera's;
 4. adds the ligatures `<= >=` (a chevron with a bar parallel to its lower arm) and `-> <-`, and
